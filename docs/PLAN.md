@@ -21,17 +21,17 @@ Skill/Subagent를 만들 때 도움이 되는 MCP·plugin을 웹에서 찾아주
   - `search_mcp_servers(query)` — 키워드로 관련 MCP 서버 검색
   - `search_plugins(query)` — 관련 plugin/skill 검색
   - `get_details(url_or_id)` — 특정 결과의 상세 정보(README, 설치법 등) 조회
-- **검색 소스 결정 (미정 — 다음 대화에서 확정)**
-  - GitHub Search API — 공개 repo 검색, 키 없이도 가능(rate limit 있음)
-  - npm registry API — `"mcp-server"` 키워드로 패키지 검색, 키 불필요
-  - 공식/커뮤니티 레지스트리 — `modelcontextprotocol/servers`, smithery.ai, mcp.so 등 큐레이션 목록
-  - 범용 웹서치 API (Brave Search 등) — API 키 필요
-  - 여러 소스를 조합 가능
-  - 시작 추천안: **GitHub Search API + npm registry** (키 불필요, 바로 시작 가능)
+- **검색 소스 결정 (확정)**
+  - **1순위 — 공식 MCP Registry** (`https://registry.modelcontextprotocol.io/v0.1/servers?search=`): 키 불필요, 검색 파라미터 지원, MCP 서버만 정확히 다뤄 노이즈 없음, 서버명이 `io.github.*` reverse-DNS 형식이라 언어 무관(Python/Node/Go 등 다 잡힘). npm/pypi 등 실제 설치 커맨드까지 응답에 포함.
+  - **2순위 — GitHub Search API** (`https://api.github.com/search/repositories`): 키 불필요(비인증 시 분당 10회 제한), 레지스트리에 아직 안 올라온 최신/실험적 프로젝트 보완용.
+  - 검토했지만 제외: npm registry(Node 생태계에만 편향, 레지스트리가 이미 포함), smithery.ai(Bearer 토큰 인증 필요), mcp.so(공식 API 없음, 서드파티 스크래퍼만 존재)
+  - **확장 방침**: 새 소스가 필요해지면 `src/sources/`에 `SearchSource` 인터페이스(`src/sources/types.ts`)를 구현한 파일을 추가하고 `src/tools/searchMcpServers.ts`의 `sources` 배열에 등록만 하면 됨
 
 ### 2단계 — 구현
 
 - **스택**: TypeScript + `@modelcontextprotocol/sdk`, transport는 **stdio** (로컬 실행이므로 원격 HTTP 불필요)
+- **모듈/빌드**: ESM + `tsup`(esbuild 기반 번들러), `noExternal`로 SDK·zod까지 단일 파일(`dist/index.js`)에 번들 — Python 스크립트 하나 공유하듯 `.js` 파일 하나만 넘기면 상대방은 Node.js만 있으면 실행 가능. (참고: 순수 `tsc`는 `node_modules` 설치가 별도로 필요해 단일 파일 공유가 안 됨)
+- **구조**: `src/index.ts`(서버 부트스트랩) + `src/tools/*.ts`(tool별 파일 분리)
 - 프로젝트 셋업: `npm init`, SDK 설치, `tsconfig.json` 구성
 - 공통 유틸: API 클라이언트(인증 필요 시), 에러 핸들링, 응답 포맷(JSON/Markdown), 페이지네이션
 - Tool별 구현 순서
@@ -65,6 +65,8 @@ Skill/Subagent를 만들 때 도움이 되는 MCP·plugin을 웹에서 찾아주
 
 ## 다음 액션
 
-- [ ] 검색 소스 확정 (1단계)
-- [ ] 프로젝트 스캐폴딩 (2단계 시작)
-- [ ] 첫 tool(`search_mcp_servers`) 구현
+- [x] 검색 소스 확정 (1단계) — 공식 MCP Registry + GitHub Search API로 확정
+- [x] 프로젝트 스캐폴딩 (2단계 시작) — ESM + tsup 번들 구조로 완료, `npm run build` 정상 동작 확인
+- [x] 첫 tool(`search_mcp_servers`) 구현 — 두 소스 결과를 병렬 조회 후 병합해서 반환, 실제 MCP stdio 프로토콜로 end-to-end 테스트 완료(`query=filesystem` 정상 동작 확인)
+- [ ] `claude mcp add`로 Claude Code에 로컬 등록해서 실제 대화에서 호출 테스트 (3단계)
+- [ ] `get_details(url_or_id)` tool — 특정 결과 상세 조회(README 등) (설계 단계에서 언급된 tool, 아직 미착수)
