@@ -20,8 +20,8 @@ Skill/Subagent를 만들 때 도움이 되는 MCP·plugin을 웹에서 찾아주
 - **Tool 목록 정하기** (예시)
   - `search_mcp_servers(query)` — 키워드로 관련 MCP 서버 검색
   - `search_plugins(query)` — 관련 plugin/skill 검색
-  - `get_details(url_or_id)` — 특정 결과의 상세 정보(README, 설치법 등) 조회
-- **검색 소스 결정 (확정)**
+  - `get_details(url_or_id)` — 특정 결과(결과 URL)의 상세 정보(README, 설치법 등) 조회
+- **검색 소스(소스 URL) 결정 (확정)** — 용어 정의는 `docs/GLOSSARY.md` 참고
   - **1순위 — 공식 MCP Registry** (`https://registry.modelcontextprotocol.io/v0.1/servers?search=`): 키 불필요, 검색 파라미터 지원, MCP 서버만 정확히 다뤄 노이즈 없음, 서버명이 `io.github.*` reverse-DNS 형식이라 언어 무관(Python/Node/Go 등 다 잡힘). npm/pypi 등 실제 설치 커맨드까지 응답에 포함.
   - **2순위 — GitHub Search API** (`https://api.github.com/search/repositories`): 키 불필요(비인증 시 분당 10회 제한), 레지스트리에 아직 안 올라온 최신/실험적 프로젝트 보완용.
   - 검토했지만 제외: npm registry(Node 생태계에만 편향, 레지스트리가 이미 포함), smithery.ai(Bearer 토큰 인증 필요), mcp.so(공식 API 없음, 서드파티 스크래퍼만 존재)
@@ -68,5 +68,5 @@ Skill/Subagent를 만들 때 도움이 되는 MCP·plugin을 웹에서 찾아주
 - [x] 검색 소스 확정 (1단계) — 공식 MCP Registry + GitHub Search API로 확정
 - [x] 프로젝트 스캐폴딩 (2단계 시작) — ESM + tsup 번들 구조로 완료, `npm run build` 정상 동작 확인
 - [x] 첫 tool(`search_mcp_servers`) 구현 — 두 소스 결과를 병렬 조회 후 병합해서 반환, 실제 MCP stdio 프로토콜로 end-to-end 테스트 완료(`query=filesystem` 정상 동작 확인)
-- [ ] `claude mcp add`로 Claude Code에 로컬 등록해서 실제 대화에서 호출 테스트 (3단계)
-- [ ] `get_details(url_or_id)` tool — 특정 결과 상세 조회(README 등) (설계 단계에서 언급된 tool, 아직 미착수)
+- [x] `claude mcp add`로 Claude Code에 로컬 등록해서 실제 대화에서 호출 테스트 (3단계) — 실제 대화에서 `search_mcp_servers(query="QA testing")` 호출, Registry 0건 + GitHub 10건 정상 반환 확인
+- [x] `get_details(url_or_id)` tool — GitHub URL/`owner/repo`/registry name(`io.github.*`) 세 가지 입력을 분류해 GitHub repo 메타데이터+README, registry의 설치 옵션(패키지·필수/선택 환경변수)을 함께 반환. Inspector CLI로 4개 케이스(GitHub URL, owner/repo, registry name, 존재하지 않는 이름) 모두 확인 완료
